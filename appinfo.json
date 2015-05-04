@@ -1,0 +1,21 @@
+{
+  "uuid": "a6c022df-457f-4516-a9a6-ec4dd361ea7e", 
+  "shortName": "timezone-example", 
+  "longName": "timezone-example", 
+  "companyName": "Pebble Technology", 
+  "versionCode": 1, 
+  "versionLabel": "1.0", 
+  "watchapp": {
+    "watchface": true
+  }, 
+  "appKeys": {
+    "dummy": 0
+  }, 
+  "resources": {
+    "media": []
+  }, 
+  "targetPlatforms": [
+    "aplite","basalt"
+  ], 
+  "sdkVersion": "3"
+}
