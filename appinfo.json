@@ -15,7 +15,7 @@
     "media": []
   }, 
   "targetPlatforms": [
-    "aplite","basalt"
+    "aplite","basalt","chalk"
   ], 
   "sdkVersion": "3"
 }
