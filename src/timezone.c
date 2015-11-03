@@ -11,7 +11,7 @@ static TextLayer *s_utcdate_layer = NULL;
 static TextLayer *s_timezone_utc_layer = NULL;
 
 // Local time, Region and UTC display string buffers
-const char *s_timezone_abbr_string = NULL;
+static const char *s_timezone_abbr_string = NULL;
 static char s_region_string[32] = "";          // Must be 32 characters large for longest option
 static char s_localdate_string[16];
 static char s_utcdate_string[16];
@@ -30,11 +30,11 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   struct tm *local_tm = localtime(&current_time);
   struct tm *utc_tm = gmtime(&current_time);
 
-  // We don't check units_changed for DAY_UNIT as we are supporting 2 timezones, 
+  // We don't check units_changed for DAY_UNIT as we are supporting 2 timezones,
   // and only localtime triggers a DAY_UNIT change.
-  
+
   // Update local date
-  snprintf(s_localdate_string, sizeof(s_localdate_string), "%s %d/%d", 
+  snprintf(s_localdate_string, sizeof(s_localdate_string), "%s %d/%d",
     s_day_names[local_tm->tm_wday], local_tm->tm_mon + 1, local_tm->tm_mday);
   layer_mark_dirty(text_layer_get_layer(s_localdate_layer));
 
@@ -49,12 +49,12 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     layer_mark_dirty(text_layer_get_layer(s_timezone_utc_layer));
 
     // Update UTC time
-    snprintf(s_utcdate_string, sizeof(s_utcdate_string), "%s %d/%d", 
+    snprintf(s_utcdate_string, sizeof(s_utcdate_string), "%s %d/%d",
         s_day_names[utc_tm->tm_wday], utc_tm->tm_mon + 1, utc_tm->tm_mday);
     layer_mark_dirty(text_layer_get_layer(s_utcdate_layer));
 
     // Update timezone
-#ifdef PBL_PLATFORM_BASALT
+#if defined(PBL_SDK_3)
     s_timezone_abbr_string = local_tm->tm_zone;
 #else
     s_timezone_abbr_string = "NA";
@@ -63,8 +63,8 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     layer_mark_dirty(text_layer_get_layer(s_timezone_abbr_layer));
 
     // Manually format utc time, to handle 24_hour or AM/PM modes
-    snprintf(s_utctime_string, sizeof(s_utctime_string), "%d:%02d%s", 
-        (s_is_clock_24) ? utc_tm->tm_hour : 
+    snprintf(s_utctime_string, sizeof(s_utctime_string), "%d:%02d%s",
+        (s_is_clock_24) ? utc_tm->tm_hour :
         ((utc_tm->tm_hour % 12 == 0) ? 12 : utc_tm->tm_hour % 12),
         utc_tm->tm_min,
         (s_is_clock_24) ? "" : ((utc_tm->tm_hour <= 12) ? " AM" : " PM"));
@@ -72,8 +72,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     layer_mark_dirty(text_layer_get_layer(s_utctime_layer));
 
     // Update timezone region
-// TODO: This should be a 3.x #ifdef
-#ifdef PBL_PLATFORM_BASALT
+#if defined(PBL_SDK_3)
     clock_get_timezone(s_region_string, TIMEZONE_NAME_LENGTH);
 #else
     snprintf(s_region_string, sizeof(s_region_string), "Not supported");
@@ -86,63 +85,84 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 /**
  * Convenience function to set up many TextLayers
  */
-static void setup_text_layer(TextLayer **text_layer, 
-    const char *text_string, char *font, GRect pos, GTextAlignment alignment) {
+static void setup_text_layer(TextLayer **text_layer,
+    const char *text_string, char *font_id, GRect pos) {
   *text_layer = text_layer_create(pos);
   text_layer_set_text(*text_layer, text_string);
-	text_layer_set_font(*text_layer, fonts_get_system_font(font));
-  text_layer_set_text_alignment(*text_layer, alignment);
+	text_layer_set_font(*text_layer, fonts_get_system_font(font_id));
+  text_layer_set_text_alignment(*text_layer, GTextAlignmentCenter);
   text_layer_set_background_color(*text_layer, GColorClear);
 }
 
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(window_layer);
 
   // Timezone text
-  setup_text_layer(&s_timezone_abbr_layer, 
-    s_timezone_abbr_string, "RESOURCE_ID_GOTHIC_28_BOLD", 
-    (GRect) {{0, 0}, {144, 28}}, GTextAlignmentCenter);
+  setup_text_layer(&s_timezone_abbr_layer, s_timezone_abbr_string, FONT_KEY_GOTHIC_28_BOLD,
+#if defined(PBL_SDK_2)
+    (GRect) {bounds.origin, {bounds.size.w, 18}});
+#elif defined(PBL_SDK_3)
+    grect_inset(bounds, GEdgeInsets(0)));
+#endif
   layer_add_child(window_layer, text_layer_get_layer(s_timezone_abbr_layer));
 
   // Date text
-  setup_text_layer(&s_localdate_layer, 
-    s_localdate_string, "RESOURCE_ID_GOTHIC_18_BOLD", 
-    (GRect) {{0, 26}, {144, 18}}, GTextAlignmentCenter);
+  setup_text_layer(&s_localdate_layer, s_localdate_string, FONT_KEY_GOTHIC_18_BOLD,
+#if defined(PBL_SDK_2)
+    (GRect) {{bounds.origin.x, 26}, {bounds.size.w, 18}});
+#elif defined(PBL_SDK_3)
+    grect_inset(bounds, GEdgeInsets(26, 0, 0, 0)));
+#endif
   layer_add_child(window_layer, text_layer_get_layer(s_localdate_layer));
 
   // Time text
-  setup_text_layer(&s_localtime_layer, 
-    s_localtime_string, "RESOURCE_ID_GOTHIC_28_BOLD", 
-    (GRect) {{0, 38}, {144, 28}}, GTextAlignmentCenter);
+  setup_text_layer(&s_localtime_layer, s_localtime_string, FONT_KEY_GOTHIC_28_BOLD,
+#if defined(PBL_SDK_2)
+    (GRect) {{bounds.origin.x, 38}, {bounds.size.w, 28}});
+#elif defined(PBL_SDK_3)
+    grect_inset(bounds, GEdgeInsets(38, 0, 0, 0)));
+#endif
   layer_add_child(window_layer, text_layer_get_layer(s_localtime_layer));
 
   // Region text
-  setup_text_layer(&s_region_layer, 
-    s_region_string, "RESOURCE_ID_GOTHIC_18_BOLD", 
-    (GRect) {{0, 72}, {144, 18 + 4}}, GTextAlignmentCenter);
+  setup_text_layer(&s_region_layer, s_region_string, FONT_KEY_GOTHIC_18_BOLD,
+#if defined(PBL_SDK_2)
+    (GRect) {{bounds.origin.x, 72}, {bounds.size.w, 18 + 4}});
+#elif defined(PBL_SDK_3)
+    grect_inset(bounds, GEdgeInsets(72, 0, 0, 0)));
+#endif
   layer_add_child(window_layer, text_layer_get_layer(s_region_layer));
-  layer_set_hidden(text_layer_get_layer(s_region_layer),true);
-
+  layer_set_hidden(text_layer_get_layer(s_region_layer), true);
 
   // UTC text
-  setup_text_layer(&s_timezone_utc_layer, 
-    "UTC", "RESOURCE_ID_GOTHIC_28_BOLD", 
-    (GRect) {{0, 94}, {144, 28}}, GTextAlignmentCenter);
+  setup_text_layer(&s_timezone_utc_layer, "UTC", FONT_KEY_GOTHIC_28_BOLD,
+#if defined(PBL_SDK_2)
+    (GRect) {{bounds.origin.x, 94}, {bounds.size.w, 28}});
+#elif defined(PBL_SDK_3)
+    grect_inset(bounds, GEdgeInsets(94, 0, 0, 0)));
+#endif
   layer_add_child(window_layer, text_layer_get_layer(s_timezone_utc_layer));
-  layer_set_hidden(text_layer_get_layer(s_timezone_utc_layer),true);
+  layer_set_hidden(text_layer_get_layer(s_timezone_utc_layer), true);
 
   // UTC date text
-  setup_text_layer(&s_utcdate_layer, 
-    s_utcdate_string, "RESOURCE_ID_GOTHIC_18_BOLD", 
-    (GRect) {{0, 120}, {144, 18}}, GTextAlignmentCenter);
+  setup_text_layer(&s_utcdate_layer, s_utcdate_string, FONT_KEY_GOTHIC_18_BOLD,
+#if defined(PBL_SDK_2)
+    (GRect) {{bounds.origin.x, 120}, {bounds.size.w, 18}});
+#elif defined(PBL_SDK_3)
+    grect_inset(bounds, GEdgeInsets(120, 0, 0, 0)));
+#endif
   layer_add_child(window_layer, text_layer_get_layer(s_utcdate_layer));
 
   // UTC time text
-  setup_text_layer(&s_utctime_layer, 
-    s_utctime_string, "RESOURCE_ID_GOTHIC_28_BOLD", 
-    (GRect) {{0, 132}, {144, 28}}, GTextAlignmentCenter);
+  setup_text_layer(&s_utctime_layer, s_utctime_string, FONT_KEY_GOTHIC_28_BOLD,
+#if defined(PBL_SDK_2)
+    (GRect) {{bounds.origin.x, 132}, {bounds.size.w, 28}});
+#elif defined(PBL_SDK_3)
+    grect_inset(bounds, GEdgeInsets(132, 0, 0, 0)));
+#endif
   layer_add_child(window_layer, text_layer_get_layer(s_utctime_layer));
-  layer_set_hidden(text_layer_get_layer(s_utctime_layer),true);
+  layer_set_hidden(text_layer_get_layer(s_utctime_layer), true);
 
   // Setup tick time handler
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
@@ -163,7 +183,7 @@ static void handle_init(void) {
 
   // Set up main Window
   s_main_window = window_create();
-  window_set_background_color(s_main_window, GColorWhite);  
+  window_set_background_color(s_main_window, GColorWhite);
   window_set_window_handlers(s_main_window, (WindowHandlers) {
     .load = window_load,
     .unload = window_unload,
