@@ -54,11 +54,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     layer_mark_dirty(text_layer_get_layer(s_utcdate_layer));
 
     // Update timezone
-#if defined(PBL_SDK_3)
     s_timezone_abbr_string = local_tm->tm_zone;
-#else
-    s_timezone_abbr_string = "NA";
-#endif
     text_layer_set_text(s_timezone_abbr_layer, s_timezone_abbr_string);
     layer_mark_dirty(text_layer_get_layer(s_timezone_abbr_layer));
 
@@ -72,11 +68,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     layer_mark_dirty(text_layer_get_layer(s_utctime_layer));
 
     // Update timezone region
-#if defined(PBL_SDK_3)
     clock_get_timezone(s_region_string, TIMEZONE_NAME_LENGTH);
-#else
-    snprintf(s_region_string, sizeof(s_region_string), "Not supported");
-#endif
     layer_set_hidden(text_layer_get_layer(s_region_layer),false);
     layer_mark_dirty(text_layer_get_layer(s_region_layer));
   }
@@ -100,67 +92,39 @@ static void window_load(Window *window) {
 
   // Timezone text
   setup_text_layer(&s_timezone_abbr_layer, s_timezone_abbr_string, FONT_KEY_GOTHIC_28_BOLD,
-#if defined(PBL_SDK_2)
-    (GRect) {bounds.origin, {bounds.size.w, 18}});
-#elif defined(PBL_SDK_3)
     grect_inset(bounds, GEdgeInsets(0)));
-#endif
   layer_add_child(window_layer, text_layer_get_layer(s_timezone_abbr_layer));
 
   // Date text
   setup_text_layer(&s_localdate_layer, s_localdate_string, FONT_KEY_GOTHIC_18_BOLD,
-#if defined(PBL_SDK_2)
-    (GRect) {{bounds.origin.x, 26}, {bounds.size.w, 18}});
-#elif defined(PBL_SDK_3)
     grect_inset(bounds, GEdgeInsets(26, 0, 0, 0)));
-#endif
   layer_add_child(window_layer, text_layer_get_layer(s_localdate_layer));
 
   // Time text
   setup_text_layer(&s_localtime_layer, s_localtime_string, FONT_KEY_GOTHIC_28_BOLD,
-#if defined(PBL_SDK_2)
-    (GRect) {{bounds.origin.x, 38}, {bounds.size.w, 28}});
-#elif defined(PBL_SDK_3)
     grect_inset(bounds, GEdgeInsets(38, 0, 0, 0)));
-#endif
   layer_add_child(window_layer, text_layer_get_layer(s_localtime_layer));
 
   // Region text
   setup_text_layer(&s_region_layer, s_region_string, FONT_KEY_GOTHIC_18_BOLD,
-#if defined(PBL_SDK_2)
-    (GRect) {{bounds.origin.x, 72}, {bounds.size.w, 18 + 4}});
-#elif defined(PBL_SDK_3)
     grect_inset(bounds, GEdgeInsets(72, 0, 0, 0)));
-#endif
   layer_add_child(window_layer, text_layer_get_layer(s_region_layer));
   layer_set_hidden(text_layer_get_layer(s_region_layer), true);
 
   // UTC text
   setup_text_layer(&s_timezone_utc_layer, "UTC", FONT_KEY_GOTHIC_28_BOLD,
-#if defined(PBL_SDK_2)
-    (GRect) {{bounds.origin.x, 94}, {bounds.size.w, 28}});
-#elif defined(PBL_SDK_3)
     grect_inset(bounds, GEdgeInsets(94, 0, 0, 0)));
-#endif
   layer_add_child(window_layer, text_layer_get_layer(s_timezone_utc_layer));
   layer_set_hidden(text_layer_get_layer(s_timezone_utc_layer), true);
 
   // UTC date text
   setup_text_layer(&s_utcdate_layer, s_utcdate_string, FONT_KEY_GOTHIC_18_BOLD,
-#if defined(PBL_SDK_2)
-    (GRect) {{bounds.origin.x, 120}, {bounds.size.w, 18}});
-#elif defined(PBL_SDK_3)
     grect_inset(bounds, GEdgeInsets(120, 0, 0, 0)));
-#endif
   layer_add_child(window_layer, text_layer_get_layer(s_utcdate_layer));
 
   // UTC time text
   setup_text_layer(&s_utctime_layer, s_utctime_string, FONT_KEY_GOTHIC_28_BOLD,
-#if defined(PBL_SDK_2)
-    (GRect) {{bounds.origin.x, 132}, {bounds.size.w, 28}});
-#elif defined(PBL_SDK_3)
     grect_inset(bounds, GEdgeInsets(132, 0, 0, 0)));
-#endif
   layer_add_child(window_layer, text_layer_get_layer(s_utctime_layer));
   layer_set_hidden(text_layer_get_layer(s_utctime_layer), true);
 
